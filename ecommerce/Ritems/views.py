@@ -1,9 +1,11 @@
+import imp
 from django.shortcuts import render
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from api.serializers import CategoriesListSerializers,ProductListSerializers, AddToCartSerializers, AlluserSerializers
 # Create your views here.
 from items.models import Categories, Product, AddToCart, Alluser, Order
+
 @api_view(['GET', 'POST', 'DELETE', 'PUT'])
 def categories(request,pk=None):
     print(request.method,pk)

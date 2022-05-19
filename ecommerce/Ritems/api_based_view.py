@@ -1,7 +1,7 @@
 from tokenize import Name
 from unicodedata import name
 from rest_framework.views import APIView
-from items.models import Categories, Product, AddToCart, Alluser, Order
+from items.models import Categories
 from rest_framework.response import Response
 from rest_framework import status
 from api.serializers import CategoriesListSerializers,ProductListSerializers, AddToCartSerializers, AlluserSerializers
