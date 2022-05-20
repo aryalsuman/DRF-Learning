@@ -4,7 +4,7 @@ from django.contrib.auth.models import AbstractUser
 
 # Create your models here.
 class Alluser(AbstractUser):
-    is_customer = models.BooleanField(default=True)
+    is_customer = models.BooleanField(default=False)
     is_Vendor = models.BooleanField(default=False)
     
 class Categories(models.Model):

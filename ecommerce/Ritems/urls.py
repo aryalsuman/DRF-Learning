@@ -8,7 +8,10 @@ from rest_framework import permissions
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 
-
+from rest_framework_simplejwt.views import (
+    TokenObtainPairView,
+    TokenRefreshView,
+)
 
 schema_view = get_schema_view(
    openapi.Info(
@@ -27,7 +30,10 @@ urlpatterns = [
     path('categories/<int:pk>', generic_based_view.CategoriesDetail.as_view(), name='category'),
     path('products', generic_based_view.ProductsList.as_view(), name='products'),
     path('products/<int:pk>', generic_based_view.ProductDetail.as_view(), name='product'),
-    
+    path('register', generic_based_view.RegisterUser.as_view(), name='register'),
+     path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('login', generic_based_view.LoginUser.as_view(), name='login'),
 ]
 urlpatterns += [
    re_path(r'^swagger(?P<format>\.json|\.yaml)$', schema_view.without_ui(cache_timeout=0), name='schema-json'),

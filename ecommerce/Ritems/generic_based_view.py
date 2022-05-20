@@ -1,12 +1,29 @@
-from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView, ListAPIView
-from items.models import Categories
-from api.serializers import CategoriesListSerializers,ProductListSerializers
-
+from traceback import print_tb
+from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView, ListAPIView,CreateAPIView
+from items.models import Categories,Product,AddToCart,Alluser,Order
+from api.serializers import CategoriesListSerializers,ProductListSerializers, AddToCartSerializers, AlluserSerializers, OrderSerializers,RegisterUserSerializers,LoginUserSerializers
+from rest_framework.response import Response
+from rest_framework import status
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
 from.pagination import MyLimitOffsetPagination
+# from api.custompermission import CustomPermission
+from items.models import Product,Categories,AddToCart,Alluser,Order
+from django.contrib.auth.models import Group
+from rest_framework_simplejwt.tokens import RefreshToken
+from django.contrib.auth import authenticate
 
-from Ritems.models import ProductofR
+
+
+
+def get_tokens_for_user(user):
+    refresh = RefreshToken.for_user(user)
+
+    return {
+        'refresh': str(refresh),
+        'access': str(refresh.access_token),
+    }
+# from Ritems.models import Product
 class CategoriesList(ListCreateAPIView):
     queryset = Categories.objects.all()
     serializer_class = CategoriesListSerializers
@@ -16,14 +33,13 @@ class CategoriesList(ListCreateAPIView):
     search_fields = ['name']
     ordering_fields = ['name']
     
-    
 
 class CategoriesDetail(RetrieveUpdateDestroyAPIView):
     queryset = Categories.objects.all()
     serializer_class = CategoriesListSerializers
     
 class ProductsList(ListCreateAPIView):
-    queryset = ProductofR.objects.all()
+    queryset = Product.objects.all()
     serializer_class = ProductListSerializers
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     pagination_class = MyLimitOffsetPagination
@@ -32,5 +48,35 @@ class ProductsList(ListCreateAPIView):
     ordering_fields = ['name','category']
     
 class ProductDetail(RetrieveUpdateDestroyAPIView):
-    queryset = ProductofR.objects.all()
+    
+    queryset = Product.objects.all()
     serializer_class = ProductListSerializers
+    
+
+class RegisterUser(CreateAPIView):
+    serializer_class = RegisterUserSerializers
+    def post(self, request, *args, **kwargs):
+        serializer = self.serializer_class(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            user=Alluser.objects.get(username=request.data['username'])
+            token=get_tokens_for_user(user)
+            #return serializer.data and token using response
+            print(token)
+            print(serializer.data)
+            return Response({"user":serializer.data,"token":token},status=status.HTTP_201_CREATED) 
+                
+        return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
+    
+class LoginUser(CreateAPIView):
+    serializer_class =LoginUserSerializers
+    def post(self,request):
+        serializer=self.serializer_class(data=request.data)
+        if serializer.is_valid():
+            user=authenticate(username=request.data['username'],password=request.data['password'])
+            if user is not None:
+                token=get_tokens_for_user(user)
+                return Response({"user":serializer.data,"token":token},status=status.HTTP_200_OK)
+            else:
+                return Response({"error":"Invalid Credentials"},status=status.HTTP_400_BAD_REQUEST)
+        return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
