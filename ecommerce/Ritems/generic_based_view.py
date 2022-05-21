@@ -12,7 +12,7 @@ from items.models import Product,Categories,AddToCart,Alluser,Order
 from django.contrib.auth.models import Group
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
-
+from rest_framework.permissions import IsAuthenticated,IsAdminUser
 
 
 
@@ -35,8 +35,10 @@ class CategoriesList(ListCreateAPIView):
     
 
 class CategoriesDetail(RetrieveUpdateDestroyAPIView):
+    
     queryset = Categories.objects.all()
     serializer_class = CategoriesListSerializers
+    permission_classes = [IsAuthenticated]
     
 class ProductsList(ListCreateAPIView):
     queryset = Product.objects.all()
