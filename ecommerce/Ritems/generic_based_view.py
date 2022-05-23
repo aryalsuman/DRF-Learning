@@ -2,6 +2,7 @@ from traceback import print_tb
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView, ListAPIView,CreateAPIView
 from items.models import Categories,Product,AddToCart,Alluser,Order
 from api.serializers import CategoriesListSerializers,ProductListSerializers, AddToCartSerializers, AlluserSerializers, OrderSerializers,RegisterUserSerializers,LoginUserSerializers
+from api import serializers
 from rest_framework.response import Response
 from rest_framework import status
 from django_filters.rest_framework import DjangoFilterBackend
@@ -82,3 +83,18 @@ class LoginUser(CreateAPIView):
             else:
                 return Response({"error":"Invalid Credentials"},status=status.HTTP_400_BAD_REQUEST)
         return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
+    
+    
+    
+
+class UserChangePassword(CreateAPIView):
+    serializer_class=serializers.UserChangePasswordSerializers
+    permission_classes = [IsAuthenticated]
+    def post(self, request, *args, **kwargs):
+        serializer=self.serializer_class(data=request.data,context={'user':request.user})
+        if serializer.is_valid(raise_exception=True):
+            user=Alluser.objects.get(username=request.user.username)
+            user.set_password(serializer.data['new_password'])
+            user.save()
+            return Response({"message":"Password Changed Successfully"},status=status.HTTP_200_OK)
+       
