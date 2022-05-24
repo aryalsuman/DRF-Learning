@@ -98,3 +98,19 @@ class UserChangePassword(CreateAPIView):
             user.save()
             return Response({"message":"Password Changed Successfully"},status=status.HTTP_200_OK)
        
+class UserResetPasswordEmail(CreateAPIView):
+    serializer_class=serializers.UserResetPasswordEmailSerializers
+    def post(self, request):
+        serializer=self.serializer_class(data=request.data)
+        print(serializer.is_valid(raise_exception=True))
+        print(serializer)
+        return Response(serializer.data,status=status.HTTP_200_OK)
+        
+        
+class UserResetPassword(CreateAPIView,):
+    serializer_class=serializers.UserResetPasswordSerializers
+    def post(self, request,id,token):
+        serializer=self.serializer_class(data=request.data,context={'id':id,'token':token})
+        serializer.is_valid(raise_exception=True)
+        return Response({"Message":"Password is reset."},status=status.HTTP_200_OK)
+        

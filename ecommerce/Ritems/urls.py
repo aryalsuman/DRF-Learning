@@ -35,6 +35,8 @@ urlpatterns = [
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('login', generic_based_view.LoginUser.as_view(), name='login'),
     path('changepassword', generic_based_view.UserChangePassword.as_view(), name='changepassword'),
+    path('resetpasswordemail', generic_based_view.UserResetPasswordEmail.as_view(), name='resetpasswordemail'),
+    path('resetpassword/<str:id>/<str:token>', generic_based_view.UserResetPassword.as_view(), name='resetpassword'),
 ]
 urlpatterns += [
    re_path(r'^swagger(?P<format>\.json|\.yaml)$', schema_view.without_ui(cache_timeout=0), name='schema-json'),
