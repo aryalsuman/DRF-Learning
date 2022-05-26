@@ -31,12 +31,13 @@ urlpatterns = [
     path('products', generic_based_view.ProductsList.as_view(), name='products'),
     path('products/<int:pk>', generic_based_view.ProductDetail.as_view(), name='product'),
     path('register', generic_based_view.RegisterUser.as_view(), name='register'),
-     path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+     path('login', TokenObtainPairView.as_view(), name='login'),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-    path('login', generic_based_view.LoginUser.as_view(), name='login'),
+    
     path('changepassword', generic_based_view.UserChangePassword.as_view(), name='changepassword'),
     path('resetpasswordemail', generic_based_view.UserResetPasswordEmail.as_view(), name='resetpasswordemail'),
     path('resetpassword/<str:id>/<str:token>', generic_based_view.UserResetPassword.as_view(), name='resetpassword'),
+    path('groups', generic_based_view.GroupPermission.as_view(), name='groups'),
 ]
 urlpatterns += [
    re_path(r'^swagger(?P<format>\.json|\.yaml)$', schema_view.without_ui(cache_timeout=0), name='schema-json'),

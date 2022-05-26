@@ -1,7 +1,7 @@
 from traceback import print_tb
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView, ListAPIView,CreateAPIView
 from items.models import Categories,Product,AddToCart,Alluser,Order
-from api.serializers import CategoriesListSerializers,ProductListSerializers, AddToCartSerializers, AlluserSerializers, OrderSerializers,RegisterUserSerializers,LoginUserSerializers
+from api.serializers import CategoriesListSerializers,ProductListSerializers, AddToCartSerializers, AlluserSerializers, OrderSerializers,RegisterUserSerializers
 from api import serializers
 from rest_framework.response import Response
 from rest_framework import status
@@ -14,6 +14,8 @@ from django.contrib.auth.models import Group
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
 from rest_framework.permissions import IsAuthenticated,IsAdminUser
+from api.custompermission import CustomerPermission,VendorPermission
+from django.contrib.auth.hashers import make_password
 
 
 
@@ -30,6 +32,7 @@ class CategoriesList(ListCreateAPIView):
     serializer_class = CategoriesListSerializers
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     pagination_class = MyLimitOffsetPagination
+    
     filterset_fields = ['name']
     search_fields = ['name']
     ordering_fields = ['name']
@@ -39,7 +42,7 @@ class CategoriesDetail(RetrieveUpdateDestroyAPIView):
     
     queryset = Categories.objects.all()
     serializer_class = CategoriesListSerializers
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAdminUser]
     
 class ProductsList(ListCreateAPIView):
     queryset = Product.objects.all()
@@ -54,15 +57,28 @@ class ProductDetail(RetrieveUpdateDestroyAPIView):
     
     queryset = Product.objects.all()
     serializer_class = ProductListSerializers
+    permission_classes = [VendorPermission]
     
 
 class RegisterUser(CreateAPIView):
     serializer_class = RegisterUserSerializers
     def post(self, request, *args, **kwargs):
         serializer = self.serializer_class(data=request.data)
+        password=make_password(request.data.get('password'))
+
         if serializer.is_valid():
-            serializer.save()
+            # serializer.data.get('password')=make_password(serializer.data.get('password'))
+            
+            # serializer.save()
+            serializer.save(password=password)
             user=Alluser.objects.get(username=request.data['username'])
+            
+            if user.is_customer==True:
+                group=Group.objects.get(name='customer')
+                user.groups.add(group)
+            if user.is_Vendor==True:
+                group=Group.objects.get(name='vendor')
+                user.groups.add(group)
             token=get_tokens_for_user(user)
             #return serializer.data and token using response
             print(token)
@@ -71,18 +87,18 @@ class RegisterUser(CreateAPIView):
                 
         return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
     
-class LoginUser(CreateAPIView):
-    serializer_class =LoginUserSerializers
-    def post(self,request):
-        serializer=self.serializer_class(data=request.data)
-        if serializer.is_valid():
-            user=authenticate(username=request.data['username'],password=request.data['password'])
-            if user is not None:
-                token=get_tokens_for_user(user)
-                return Response({"user":serializer.data,"token":token},status=status.HTTP_200_OK)
-            else:
-                return Response({"error":"Invalid Credentials"},status=status.HTTP_400_BAD_REQUEST)
-        return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
+# class LoginUser(CreateAPIView):
+#     serializer_class =LoginUserSerializers
+#     def post(self,request):
+#         serializer=self.serializer_class(data=request.data)
+#         if serializer.is_valid():
+#             user=authenticate(username=request.data['username'],password=request.data['password'])
+#             if user is not None:
+#                 token=get_tokens_for_user(user)
+#                 return Response({"user":serializer.data,"token":token},status=status.HTTP_200_OK)
+#             else:
+#                 return Response({"error":"Invalid Credentials"},status=status.HTTP_400_BAD_REQUEST)
+#         return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
     
     
     
@@ -107,10 +123,33 @@ class UserResetPasswordEmail(CreateAPIView):
         return Response(serializer.data,status=status.HTTP_200_OK)
         
         
-class UserResetPassword(CreateAPIView,):
+class UserResetPassword(CreateAPIView):
     serializer_class=serializers.UserResetPasswordSerializers
     def post(self, request,id,token):
         serializer=self.serializer_class(data=request.data,context={'id':id,'token':token})
         serializer.is_valid(raise_exception=True)
         return Response({"Message":"Password is reset."},status=status.HTTP_200_OK)
+    
+class UserPermission(ListAPIView):
+    permission_classes = [IsAuthenticated]
+    def get(self,request):
+        user=request.user
+        permission=user.get_all_permissions()
+        print(permission)
+        Response(permission,status=status.HTTP_200_OK)
         
+        
+class GroupPermission(ListCreateAPIView):
+    serializer_class=serializers.GroupSerializers
+    queryset=Group.objects.all()
+    # permission_classes = [IsAdminUser]
+    # def get(self,request):
+    #     group=Group.objects.all()
+    #     serializer=self.serializer_class(group,many=True)
+    #     return Response(serializer.data,status=status.HTTP_200_OK)
+    # def post(self,request):
+    #     serializer=self.serializer_class(data=request.data)
+    #     if serializer.is_valid():
+    #         serializer.save()
+    #         return Response(serializer.data,status=status.HTTP_200_OK)
+    #     return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)

@@ -10,6 +10,7 @@ from Ritems.utils import sendEmail
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.utils.encoding import force_bytes,force_str
 from django.utils.http import urlsafe_base64_encode,urlsafe_base64_decode
+from django.contrib.auth.models import Group,Permission
 
 class CategoriesListSerializers(serializers.ModelSerializer):
     
@@ -41,10 +42,10 @@ class RegisterUserSerializers(serializers.ModelSerializer):
         model = Alluser
         fields = ['username','password','is_customer','is_Vendor']
         
-class LoginUserSerializers(serializers.ModelSerializer):
-    class Meta:
-        model = Alluser
-        fields = ['username','password']
+# class LoginUserSerializers(serializers.ModelSerializer):
+#     class Meta:
+#         model = Alluser
+#         fields = ['username','password']
         
 class UserChangePasswordSerializers(serializers.Serializer):
     password=serializers.CharField(max_length=100,style={'input_type':'password'})
@@ -108,3 +109,10 @@ class UserResetPasswordSerializers(serializers.Serializer):
                 raise serializers.ValidationError("Password and confirm password must be same")
         else:
             raise serializers.ValidationError("Invalid Token")
+
+
+
+class GroupSerializers(serializers.ModelSerializer):
+    class Meta:
+        model = Group
+        fields = '__all__'

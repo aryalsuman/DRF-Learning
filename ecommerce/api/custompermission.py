@@ -3,7 +3,7 @@ from rest_framework import permissions
 class CustomerPermission(permissions.BasePermission):
 
     def has_permission(self, request, view):
-        if request.user.groups.filter(name='customer').exists()  or request.user.is_superuser:
+        if request.user.is_customer  or request.user.is_superuser:
             return True
         else:
             return False
@@ -11,7 +11,7 @@ class CustomerPermission(permissions.BasePermission):
 class VendorPermission(permissions.BasePermission):
     def has_permission(self, request, view):
         
-        if request.user.groups.filter(name='vendor').exists() or request.user.is_superuser:
+        if request.user.is_Vendor or request.user.is_superuser:
             
             return True
         else:
