@@ -153,3 +153,49 @@ class GroupPermission(ListCreateAPIView):
     #         serializer.save()
     #         return Response(serializer.data,status=status.HTTP_200_OK)
     #     return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
+    
+class GroupPermissionDetail(RetrieveUpdateDestroyAPIView):
+    serializer_class=serializers.GroupSerializers
+    queryset=Group.objects.all()
+    # permission_classes = [IsAdminUser]
+    # def get(self,request,id):
+    #     group=Group.objects.get(id=id)
+    #     serializer=self.serializer_class(group)
+    #     return Response(serializer.data,status=status.HTTP_200_OK)
+    # def put(self,request,id):
+    #     group=Group.objects.get(id=id)
+    #     serializer=self.serializer_class(group,data=request.data)
+    #     if serializer.is_valid():
+    #         serializer.save()
+    #         return Response(serializer.data,status=status.HTTP_200_OK)
+    #     return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
+    # def delete(self,request,id):
+    #     group=Group.objects.get(id=id)
+    #     group.delete()
+    #     return Response(status=status.HTTP_204_NO_CONTENT)
+    
+    
+    
+class AddToCartView(ListCreateAPIView):
+    serializer_class=serializers.AddToCartSerializers
+    permission_classes = [IsAuthenticated]
+    def get(self,request):
+        cart=AddToCart.objects.filter(customer__username=request.user.username)
+        serializer=self.serializer_class(cart,many=True)
+        return Response(serializer.data,status=status.HTTP_200_OK)
+    def post(self,request):
+        serializer=self.serializer_class(data=request.data)
+        customer=Alluser.objects.get(username=request.user.username)
+        if AddToCart.objects.filter(customer=customer,product=request.data['product']).exists():
+                product=AddToCart.objects.get(customer=customer,product=request.data['product'])
+                product.quantity=int(product.quantity)+int(request.data['quantity'])
+                product.save()
+                return Response({"mes":"Added","data":product.quantity},status=status.HTTP_200_OK)
+        if serializer.is_valid():
+            customer=Alluser.objects.get(username=request.user.username)
+            serializer.save(customer=customer)
+            return Response({"mes":"Added","data":serializer.data},status=status.HTTP_200_OK)
+        return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST) 
+    
+    
+    

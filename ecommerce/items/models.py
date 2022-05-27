@@ -18,21 +18,17 @@ class Product(models.Model):
     description = models.TextField()
     price = models.DecimalField(max_digits=10, decimal_places=2)
     category = models.ForeignKey(Categories,on_delete=models.CASCADE)
-    vendor=models.ManyToManyField(Alluser,related_name='vendor')
+    vendor=models.ManyToManyField(Alluser)
     def __str__(self):
         return self.name
     
 class AddToCart(models.Model):
     product = models.ForeignKey(Product,on_delete=models.CASCADE)
     quantity = models.IntegerField(default=1)
-    customer=models.OneToOneField(Alluser,on_delete=models.CASCADE)
+    customer=models.ForeignKey(Alluser,related_name='customer',on_delete=models.CASCADE)
     def __str__(self):
-        return self.product.name
-
-# Model for order placed by customer from addtocart 
+        # a=self.customer.all()
+         return self.product.name 
+     
 class Order(models.Model):
-    vendor=models.OneToOneField(Alluser,on_delete=models.CASCADE,related_name='vendorfororder')
-    product=models.ForeignKey(Product,on_delete=models.CASCADE,related_name='productfororder')
-    customer=models.ForeignKey(Alluser,on_delete=models.CASCADE,related_name='customerfororder')
-    def __str__(self):
-        return(str(self.customer)+'to'+str(self.vendor)+'for'+str(self.product))
+    addtocart = models.OneToOneField(AddToCart,on_delete=models.CASCADE)

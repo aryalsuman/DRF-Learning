@@ -116,3 +116,8 @@ class GroupSerializers(serializers.ModelSerializer):
     class Meta:
         model = Group
         fields = '__all__'
+        
+class AddToCartSerializers(serializers.ModelSerializer):
+    class Meta:
+        model = AddToCart
+        fields = ['product','quantity']
