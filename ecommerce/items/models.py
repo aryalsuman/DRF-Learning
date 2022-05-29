@@ -26,9 +26,12 @@ class AddToCart(models.Model):
     product = models.ForeignKey(Product,on_delete=models.CASCADE)
     quantity = models.IntegerField(default=1)
     customer=models.ForeignKey(Alluser,related_name='customer',on_delete=models.CASCADE)
+    is_ordered = models.BooleanField(default=False)
     def __str__(self):
         # a=self.customer.all()
-         return self.product.name 
+         return self.product.name +'by'+self.customer.username
      
 class Order(models.Model):
     addtocart = models.OneToOneField(AddToCart,on_delete=models.CASCADE)
+    def __str__(self) -> str:
+        return self.addtocart

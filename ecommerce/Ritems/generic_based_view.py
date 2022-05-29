@@ -16,7 +16,7 @@ from django.contrib.auth import authenticate
 from rest_framework.permissions import IsAuthenticated,IsAdminUser
 from api.custompermission import CustomerPermission,VendorPermission
 from django.contrib.auth.hashers import make_password
-
+from rest_framework.views import APIView
 
 
 def get_tokens_for_user(user):
@@ -177,16 +177,17 @@ class GroupPermissionDetail(RetrieveUpdateDestroyAPIView):
     
     
 class AddToCartView(ListCreateAPIView):
+    
     serializer_class=serializers.AddToCartSerializers
     permission_classes = [IsAuthenticated]
     def get(self,request):
-        cart=AddToCart.objects.filter(customer__username=request.user.username)
+        cart=AddToCart.objects.filter(customer__username=request.user.username,is_ordered=False)
         serializer=self.serializer_class(cart,many=True)
         return Response(serializer.data,status=status.HTTP_200_OK)
     def post(self,request):
         serializer=self.serializer_class(data=request.data)
         customer=Alluser.objects.get(username=request.user.username)
-        if AddToCart.objects.filter(customer=customer,product=request.data['product']).exists():
+        if AddToCart.objects.filter(customer=customer,product=request.data['product'],is_ordered=False).exists():
                 product=AddToCart.objects.get(customer=customer,product=request.data['product'])
                 product.quantity=int(product.quantity)+int(request.data['quantity'])
                 product.save()
@@ -199,3 +200,17 @@ class AddToCartView(ListCreateAPIView):
     
     
     
+class OrderView(APIView):
+    # queryset=Order.objects.all()
+    # serializer_class=serializers.OrderSerializers
+    def post(self,request,id):
+        item=AddToCart.objects.get(id=id)
+        item.is_ordered =True
+        item.save()
+        Order.objects.create(addtocart=item)
+        
+        return Response({"mes":"Order Placed"},status=status.HTTP_200_OK)
+    
+            
+        
+        

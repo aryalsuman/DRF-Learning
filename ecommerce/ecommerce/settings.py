@@ -167,3 +167,17 @@ EMAIL_PORT=587
 EMAIL_HOST_USER='sumanaryal83p2@gmail.com'
 EMAIL_HOST_PASSWORD='9847494921!@#$abc'
 EMAIL_USE_TLS=True
+
+
+
+
+
+SWAGGER_SETTINGS = {
+    'SECURITY_DEFINITIONS': {
+        "Auth Token eg [Bearer {JWT}]": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
+        }
+    }
+}

@@ -1,3 +1,4 @@
+from asyncore import read
 from dataclasses import field
 from lib2to3.pgen2 import token
 from pyexpat import model
@@ -118,6 +119,13 @@ class GroupSerializers(serializers.ModelSerializer):
         fields = '__all__'
         
 class AddToCartSerializers(serializers.ModelSerializer):
+    product=serializers.StringRelatedField(read_only=True)
     class Meta:
         model = AddToCart
         fields = ['product','quantity']
+        
+        
+class OrderSerializers(serializers.ModelSerializer):
+    class Meta:
+        model = Order
+        fields = '__all__'
