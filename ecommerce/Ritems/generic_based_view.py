@@ -1,3 +1,5 @@
+from email import header
+from itertools import product
 from traceback import print_tb
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView, ListAPIView,CreateAPIView
 from items.models import Categories,Product,AddToCart,Alluser,Order
@@ -17,7 +19,7 @@ from rest_framework.permissions import IsAuthenticated,IsAdminUser
 from api.custompermission import CustomerPermission,VendorPermission
 from django.contrib.auth.hashers import make_password
 from rest_framework.views import APIView
-
+import requests
 
 def get_tokens_for_user(user):
     refresh = RefreshToken.for_user(user)
@@ -181,13 +183,13 @@ class AddToCartView(ListCreateAPIView):
     serializer_class=serializers.AddToCartSerializers
     permission_classes = [IsAuthenticated]
     def get(self,request):
-        cart=AddToCart.objects.filter(customer__username=request.user.username,is_ordered=False)
+        cart=AddToCart.objects.filter(customer__username=request.user.username)
         serializer=self.serializer_class(cart,many=True)
         return Response(serializer.data,status=status.HTTP_200_OK)
     def post(self,request):
         serializer=self.serializer_class(data=request.data)
         customer=Alluser.objects.get(username=request.user.username)
-        if AddToCart.objects.filter(customer=customer,product=request.data['product'],is_ordered=False).exists():
+        if AddToCart.objects.filter(customer=customer,product=request.data['product']).exists():
                 product=AddToCart.objects.get(customer=customer,product=request.data['product'])
                 product.quantity=int(product.quantity)+int(request.data['quantity'])
                 product.save()
@@ -199,18 +201,94 @@ class AddToCartView(ListCreateAPIView):
         return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST) 
     
     
+class AddToCartDetail(RetrieveUpdateDestroyAPIView):
+    serializer_class=serializers.AddToCartSerializers
+    permission_classes = [IsAuthenticated]
+    def get(self,request,id):
+        cart=AddToCart.objects.get(id=id)
+        if cart.customer.username==request.user.username:
+            serializer=self.serializer_class(cart)
+            return Response(serializer.data,status=status.HTTP_200_OK)
+        return Response({"error":"Item doesn't exist in cart."},status=status.HTTP_400_BAD_REQUEST)
+    def put(self,request,id):
+        cart=AddToCart.objects.get(id=id)
+        if cart.customer.username==request.user.username:
+
+            serializer=self.serializer_class(cart,data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data,status=status.HTTP_200_OK)
+            return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
+        return Response({"error":"Item doesn't exist in cart."},status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self,request,id):
+        
+        cart=AddToCart.objects.get(id=id)
+        if cart.customer.username==request.user.username:
+
+            cart.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response({"error":"Item doesn't exist in cart."},status=status.HTTP_400_BAD_REQUEST)
+
+class OrderView(ListCreateAPIView):
+    queryset=Order.objects.all()
+    serializer_class=serializers.OrderSerializers
+    permission_classes = [IsAuthenticated]
+    def post(self,request):
+        serializer=self.serializer_class(data=request.data)
+        if serializer.is_valid():
+            cart_id=request.data['cart_id']
+            cart=AddToCart.objects.get(id=cart_id)
+            if request.user.username==cart.customer.username:
+                Order.objects.create(product=cart.product,customer=cart.customer,quantity=cart.quantity,vendor=cart.product.vendor,city=request.data['city'],payment=request.data['payment'])
+                cart.delete()
+                return Response({"mes":"Order Placed"},status=status.HTTP_200_OK)
+            else:
+                return Response({"error":"Item doesn't exist in cart."},status=status.HTTP_400_BAD_REQUEST)
+        return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
     
-class OrderView(APIView):
-    # queryset=Order.objects.all()
-    # serializer_class=serializers.OrderSerializers
-    def post(self,request,id):
-        item=AddToCart.objects.get(id=id)
-        item.is_ordered =True
-        item.save()
-        Order.objects.create(addtocart=item)
+    def get(self,request):
+        order=Order.objects.filter(customer__username=request.user.username)
+        serializer=self.serializer_class(order,many=True)
+        return Response(serializer.data,status=status.HTTP_200_OK)
+           
+           
+           
+class ClientInitiatePayment(CreateAPIView):
+    serializer_class=serializers.ClientInitiatePaymentSerializers
+    def post(self,request):
+        serializer=self.serializer_class(data=request.data)
+        if serializer.is_valid():
+            payload=request.data
+            url='https://khalti.com/api/v2/payment/initiate/'
+            response_from_khalti=requests.post(url,data=payload)
+            return Response(response_from_khalti.json(),status=status.HTTP_200_OK)
+        else:
+            return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
         
-        return Response({"mes":"Order Placed"},status=status.HTTP_200_OK)
     
-            
-        
-        
+class ConfirmTransaction(CreateAPIView):
+    serializer_class=serializers.ConfirmTransactionSerializers
+    def post(self,request):
+        serializer=self.serializer_class(data=request.data)
+        if serializer.is_valid():
+            payload=request.data
+            url='https://khalti.com/api/v2/payment/confirm/'
+            response_from_khalti=requests.post(url,data=payload)
+            return Response(response_from_khalti.json(),status=status.HTTP_200_OK)
+        else:
+            return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
+
+class VerifyRequest(CreateAPIView):
+    serializer_class=serializers.VerifyRequestSerializers
+    def post(self,request):
+        serializer=self.serializer_class(data=request.data)
+        if serializer.is_valid():
+            Authorization=request.data.pop('Authorization')
+            headers={'Authorization':Authorization}
+            payload=request.data
+            url='https://khalti.com/api/v2/payment/verify/'
+            response_from_khalti=request.post(url,data=payload,headers=headers)
+            return Response(response_from_khalti.json(),status=status.HTTP_200_OK)
+        else:
+            return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)

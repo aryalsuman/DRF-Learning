@@ -1,7 +1,9 @@
 from asyncore import read
-from dataclasses import field
+from dataclasses import field, fields
+from itertools import product
 from lib2to3.pgen2 import token
 from pyexpat import model
+from sre_constants import MIN_UNTIL
 from tkinter.ttk import Style
 from rest_framework import serializers
 from items.models import Categories, Product, AddToCart, Alluser, Order
@@ -119,13 +121,44 @@ class GroupSerializers(serializers.ModelSerializer):
         fields = '__all__'
         
 class AddToCartSerializers(serializers.ModelSerializer):
-    product=serializers.StringRelatedField(read_only=True)
+    # product=serializers.StringRelatedField(read_only=True)
+    items=ProductListSerializers(many=True,read_only=True)
     class Meta:
         model = AddToCart
-        fields = ['product','quantity']
+        fields = ['product','quantity','items']
         
         
 class OrderSerializers(serializers.ModelSerializer):
+    cart_id=serializers.IntegerField(write_only=True)
+    product=ProductListSerializers(read_only=True)
     class Meta:
-        model = Order
-        fields = '__all__'
+        model=Order
+        fields = ['cart_id','city','payment','product']
+        
+class ClientInitiatePaymentSerializers(serializers.Serializer):
+    public_key=serializers.CharField(max_length=100)
+    mobile=serializers.CharField(max_length=100)
+    transaction_pin=serializers.CharField(max_length=100)
+    amount=serializers.IntegerField()
+    product_identity=serializers.CharField(max_length=100)
+    product_name=serializers.CharField(max_length=100)
+    
+    class Meta:
+        fields = ['public_key','mobile','transaction_pin','amount','product_identity','product_name']
+
+
+class ConfirmTransactionSerializers(serializers.Serializer):
+    public_key=serializers.CharField(max_length=100)
+    token=serializers.CharField(max_length=100)
+    confirmation_code=serializers.CharField(max_length=100)
+    transaction_pin=serializers.CharField(max_length=100)
+    class Meta:
+        fields = ['public_key','token','confirmation_code','transaction_pin']
+
+
+class VerifyRequestSerializers(serializers.Serializer):
+    Authorization=serializers.CharField(max_length=200)
+    token=serializers.CharField(max_length=100)
+    amount=serializers.IntegerField()
+    class Meta:
+        fields = ['Authorization','public_key','token']

@@ -1,4 +1,5 @@
 
+from itertools import product
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 
@@ -18,7 +19,7 @@ class Product(models.Model):
     description = models.TextField()
     price = models.DecimalField(max_digits=10, decimal_places=2)
     category = models.ForeignKey(Categories,on_delete=models.CASCADE)
-    vendor=models.ManyToManyField(Alluser)
+    vendor=models.ForeignKey(Alluser,on_delete=models.CASCADE,default=0)
     def __str__(self):
         return self.name
     
@@ -26,12 +27,17 @@ class AddToCart(models.Model):
     product = models.ForeignKey(Product,on_delete=models.CASCADE)
     quantity = models.IntegerField(default=1)
     customer=models.ForeignKey(Alluser,related_name='customer',on_delete=models.CASCADE)
-    is_ordered = models.BooleanField(default=False)
     def __str__(self):
         # a=self.customer.all()
          return self.product.name +'by'+self.customer.username
      
 class Order(models.Model):
-    addtocart = models.OneToOneField(AddToCart,on_delete=models.CASCADE)
-    def __str__(self) -> str:
-        return self.addtocart
+    product=models.ForeignKey(Product,on_delete=models.CASCADE)
+    quantity = models.IntegerField(default=1)
+    customer=models.ForeignKey(Alluser,related_name='Orderofcustomer',on_delete=models.CASCADE)
+    vendor=models.ForeignKey(Alluser,related_name='OrderForvendor',on_delete=models.CASCADE)
+    city = models.CharField(max_length=100,default=None)
+    Payment_Choices = (('COD','Cash On Delivery'),("Wallet",'eSewa'),("Bank",'Bank Transfer'))
+    payment=models.CharField(max_length=100,choices=Payment_Choices,default='COD')
+    def __str__(self) :
+        return self.product.name +'by'+self.customer.username+'to'+self.vendor.username

@@ -40,7 +40,12 @@ urlpatterns = [
     path('groups', generic_based_view.GroupPermission.as_view(), name='groups'),
     path('groups/<int:pk>', generic_based_view.GroupPermissionDetail.as_view(), name='group'),
     path('addtocart', generic_based_view.AddToCartView.as_view(), name='addtocart'),
-    path('order/<int:id>', generic_based_view.OrderView.as_view(), name='order'),
+    path('addtocart/<int:pk>', generic_based_view.AddToCartDetail.as_view(), name='addtocartdetail'),
+    path('order', generic_based_view.OrderView.as_view(), name='order'),
+    path('clientinitiatepayment', generic_based_view.ClientInitiatePayment.as_view(), name='clientinitiatepayment'),
+    path('confirmpayment', generic_based_view.ConfirmTransaction.as_view(), name='confirmpayment'),
+    path('verifyrequest', generic_based_view.VerifyRequest.as_view(), name='verifyrequest'),
+   #  path('order/<int:id>', generic_based_view.OrderView.as_view(), name='order'),
 ]
 urlpatterns += [
    re_path(r'^swagger(?P<format>\.json|\.yaml)$', schema_view.without_ui(cache_timeout=0), name='schema-json'),
