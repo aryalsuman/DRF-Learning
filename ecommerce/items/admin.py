@@ -1,9 +1,9 @@
 from atexit import register
 from django.contrib import admin
-from items.models import Categories, Product,AddToCart,Alluser,Order
+from items.models import Categories, Product,AddToCart,Alluser,Order,Cart
 from django.contrib.auth.models import User
 # Register your models here.
-admin.site.register([Categories, Product, AddToCart])
+admin.site.register([Categories, Product, AddToCart,Cart])
 admin.site.register(Order)
 
 

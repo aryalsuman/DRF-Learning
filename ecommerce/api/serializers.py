@@ -136,15 +136,11 @@ class OrderSerializers(serializers.ModelSerializer):
         fields = ['cart_id','city','payment','product']
         
 class ClientInitiatePaymentSerializers(serializers.Serializer):
-    public_key=serializers.CharField(max_length=100)
     mobile=serializers.CharField(max_length=100)
     transaction_pin=serializers.CharField(max_length=100)
-    amount=serializers.IntegerField()
-    product_identity=serializers.CharField(max_length=100)
-    product_name=serializers.CharField(max_length=100)
     
     class Meta:
-        fields = ['public_key','mobile','transaction_pin','amount','product_identity','product_name']
+        fields = ['mobile','transaction_pin']
 
 
 class ConfirmTransactionSerializers(serializers.Serializer):

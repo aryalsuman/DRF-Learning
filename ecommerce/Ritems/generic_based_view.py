@@ -2,7 +2,7 @@ from email import header
 from itertools import product
 from traceback import print_tb
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView, ListAPIView,CreateAPIView
-from items.models import Categories,Product,AddToCart,Alluser,Order
+from items.models import Categories,Product,AddToCart,Alluser,Order,Cart
 from api.serializers import CategoriesListSerializers,ProductListSerializers, AddToCartSerializers, AlluserSerializers, OrderSerializers,RegisterUserSerializers
 from api import serializers
 from rest_framework.response import Response
@@ -238,10 +238,20 @@ class OrderView(ListCreateAPIView):
         serializer=self.serializer_class(data=request.data)
         if serializer.is_valid():
             cart_id=request.data['cart_id']
-            cart=AddToCart.objects.get(id=cart_id)
-            if request.user.username==cart.customer.username:
-                Order.objects.create(product=cart.product,customer=cart.customer,quantity=cart.quantity,vendor=cart.product.vendor,city=request.data['city'],payment=request.data['payment'])
-                cart.delete()
+            cart_item=AddToCart.objects.get(id=cart_id)
+            if request.user.username==cart_item.customer.username:
+                Order.objects.create(product=cart_item.product,customer=cart_item.customer,quantity=cart_item.quantity,vendor=cart_item.product.vendor,city=request.data['city'],payment=request.data['payment'])
+                
+                cart_for_customer=Cart.objects.filter(customer=cart_item.customer)
+                if cart_for_customer.exists():
+                    cart_for_customer=cart_for_customer.first()
+                    price=cart_item.product.price*cart_item.quantity
+                    cart_for_customer.total_price=cart_for_customer.total_price+price
+                    cart_for_customer.save()
+                else:
+                    Cart.objects.create(customer=cart_item.customer,total_price=cart_item.product.price*cart_item.quantity)
+                  
+                cart_item.delete()
                 return Response({"mes":"Order Placed"},status=status.HTTP_200_OK)
             else:
                 return Response({"error":"Item doesn't exist in cart."},status=status.HTTP_400_BAD_REQUEST)
@@ -256,10 +266,23 @@ class OrderView(ListCreateAPIView):
            
 class ClientInitiatePayment(CreateAPIView):
     serializer_class=serializers.ClientInitiatePaymentSerializers
+    permission_classes=[IsAuthenticated]
     def post(self,request):
         serializer=self.serializer_class(data=request.data)
         if serializer.is_valid():
-            payload=request.data
+            amount=request.user.cart.total_price
+            Order_Of=Order.objects.filter(customer__username=request.user.username)
+            product_of=[order.product.id for order in Order_Of]
+            product_name=[order.product.name for order in Order_Of]
+            payload={
+                'public_key':'test_public_key_702aa44ed9fe4bc2824a0a1b0e716b49',
+                'mobile':request.data['mobile'],
+                'transaction':request.data['transaction'],
+                'amount':amount,
+                'product_identity':product_of,
+                'product_name':product_name
+                
+            }
             url='https://khalti.com/api/v2/payment/initiate/'
             response_from_khalti=requests.post(url,data=payload)
             return Response(response_from_khalti.json(),status=status.HTTP_200_OK)
@@ -288,7 +311,7 @@ class VerifyRequest(CreateAPIView):
             headers={'Authorization':Authorization}
             payload=request.data
             url='https://khalti.com/api/v2/payment/verify/'
-            response_from_khalti=request.post(url,data=payload,headers=headers)
+            response_from_khalti=requests.post(url,data=payload,headers=headers)
             return Response(response_from_khalti.json(),status=status.HTTP_200_OK)
         else:
             return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
